@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId           String             @id @default(uuid())
+  email            String             @unique
+  password         String
+  firstName        String
+  lastName         String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  role             Role               @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: Cascade)
+  Course           Course[]
+  roleId           String
+  CourseFeedback   CourseFeedback[]
+  CourseEnrollment CourseEnrollment[]
+  testResults      TestResult[]       @relation(name: "results")
+  testGraded       TestResult[]       @relation(name: "graded")
+}
+
+model Course {
+  courseId         String             @id @default(uuid())
+  name             String
+  courseDetails    String?
+  user             User?              @relation(fields: [userId], references: [userId], onUpdate: Cascade, onDelete: Cascade)
+  userId           String
+  CourseFeedback   CourseFeedback[]
+  CourseEnrollment CourseEnrollment[]
+  Test             Test[]
+}
+
+model CourseFeedback {
+  courseFeedBackId String @id @default(uuid())
+  feedback         String @db.Text
+  student          User   @relation(fields: [studentId], references: [userId], onUpdate: Cascade, onDelete: Cascade)
+  studentId        String
+  course           Course @relation(fields: [courseId], references: [courseId], onUpdate: Cascade, onDelete: Cascade)
+  courseId         String
+}
+
+model CourseEnrollment {
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [userId], onUpdate: Cascade, onDelete: Cascade)
+  userId    String
+  course    Course   @relation(fields: [courseId], references: [courseId], onUpdate: Cascade, onDelete: Cascade)
+  courseId  String
+  role      Role     @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: Cascade)
+  roleId    String
+
+  @@id([userId, courseId])
+  @@index([userId, roleId])
+}
+
+model Test {
+  testId   String @id @default(uuid())
+  name     String
+  date     String
+  course   Course @relation(fields: [courseId], references: [courseId], onUpdate: Cascade, onDelete: Cascade)
+  courseId String
+
+  updatedAt  DateTime     @updatedAt
+  TestResult TestResult[]
+}
+
+model TestResult {
+  testResultId String  @id @default(uuid())
+  result       Decimal
+  student      User    @relation(name: "results", fields: [studentId], references: [userId], onUpdate: Cascade, onDelete: Cascade)
+  studentId    String
+  gradedBy     User    @relation(name: "graded", fields: [graderId], references: [userId], onUpdate: Cascade, onDelete: Cascade)
+  graderId     String
+  test         Test    @relation(fields: [testId], references: [testId])
+  testId       String
+}
+
+model Role {
+  roleId           String             @id @default(uuid())
+  name             String
+  description      String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  User             User[]
+  permission       PermRole[]
+  CourseEnrollment CourseEnrollment[]
+}
+
+model Permission {
+  permId     String     @id @default(uuid())
+  name       String
+  action     String
+  subject    String
+  fields     String?
+  conditions Json?
+  role       PermRole[]
+}
+
+model PermRole {
+  role         Role       @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: Cascade)
+  roleId       String
+  permission   Permission @relation(fields: [permissionId], references: [permId], onUpdate: Cascade, onDelete: Cascade)
+  permissionId String
+
+  @@id([roleId, permissionId])
+}

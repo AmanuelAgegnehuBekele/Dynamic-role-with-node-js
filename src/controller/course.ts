@@ -2,30 +2,41 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { defineAbilitiesFor, ForbiddenOperationError } from "../casl/abilities";
 import { getPerm, getUser } from "../utils/user";
+import { courseSchema } from "../validator/course";
 
 const prisma = new PrismaClient();
 
 export const createCourse = async (req: Request, res: Response) => {
-  const { name, courseDetails } = req.body;
-  const userId = req.session.user.userId;
-  const role = await getPerm(req.session.user.userId);
-  const user = await getUser(req.session.user.userId);
-  try {
-    const abilities = await defineAbilitiesFor(role, user);
-    ForbiddenOperationError.from(abilities).throwUnlessCan("create", "Course");
-    const course = await prisma.course.create({
-      data: {
-        name: name,
-        courseDetails: courseDetails,
-        userId: userId,
-      },
-    });
-    res.status(201).json({
-      message: "Course created successfully",
-      data: { course: course },
-    });
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+  const validate = await courseSchema.validate(req.body, {
+    abortEarly: false,
+  });
+  if (validate.error?.message) {
+    res.status(400).json({ message: validate.error.message });
+  } else {
+    const { name, courseDetails } = req.body;
+    const userId = req.session.user.userId;
+    const role = await getPerm(req.session.user.userId);
+    const user = await getUser(req.session.user.userId);
+    try {
+      const abilities = await defineAbilitiesFor(role, user);
+      ForbiddenOperationError.from(abilities).throwUnlessCan(
+        "create",
+        "Course"
+      );
+      const course = await prisma.course.create({
+        data: {
+          name: name,
+          courseDetails: courseDetails,
+          userId: userId,
+        },
+      });
+      res.status(201).json({
+        message: "Course created successfully",
+        data: { course: course },
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   }
 };
 
@@ -78,35 +89,53 @@ export const getCourse = async (req: Request, res: Response) => {
 
 export const updateCourse = async (req: Request, res: Response) => {
   const courseId = req.params.courseId;
-  const body = req.body;
-  try {
-    const updatedCourse = await prisma.course.update({
-      where: {
-        courseId: courseId,
-      },
-      data: body,
+  const courseExists = await prisma.course.findUnique({
+    where: { courseId: courseId },
+  });
+  if (!courseExists) {
+    res.status(404).json({
+      message: "Course not found",
     });
-    res.status(201).json({
-      message: "Course updated successfully",
-      course: updatedCourse,
-    });
-  } catch (error) {
-    res.status(400).json({ error: error });
+  } else {
+    const body = req.body;
+    try {
+      const updatedCourse = await prisma.course.update({
+        where: {
+          courseId: courseId,
+        },
+        data: body,
+      });
+      res.status(201).json({
+        message: "Course updated successfully",
+        course: updatedCourse,
+      });
+    } catch (error) {
+      res.status(400).json({ error: error });
+    }
   }
 };
 
 export const deleteCourse = async (req: Request, res: Response) => {
   const courseId = req.params.courseId;
-  try {
-    await prisma.course.delete({
-      where: {
-        courseId: courseId,
-      },
+  const courseExists = await prisma.course.findUnique({
+    where: { courseId: courseId },
+  });
+  if (!courseExists) {
+    res.status(404).json({
+      message: "Course not found",
     });
-    res.status(200).json({
-      message: "Course delete successfully",
-    });
-  } catch (error) {
-    res.status(400).json({ error: error });
+  } else {
+    try {
+      await prisma.course.delete({
+        where: {
+          courseId: courseId,
+        },
+      });
+      res.status(200).json({
+        message: "Course delete successfully",
+      });
+    } catch (error) {
+      res.status(400).json({ error: error });
+    }
   }
 };

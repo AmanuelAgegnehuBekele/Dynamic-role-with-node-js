@@ -1,38 +1,45 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-
+import { roleSchema } from "../validator/role";
 const prisma = new PrismaClient();
 
 export const createRole = async (req: Request, res: Response) => {
-  const { name, description, permission } = req.body;
-  try {
-    const role = await prisma.role.create({
-      data: {
-        name: name,
-        description: description,
-      },
-    });
-
-    const roleId = role.roleId;
-    let permissions: any = [];
-
-    permission.map((p: any) => {
-      permissions.push({
-        permissionId: p,
-        roleId: roleId,
+  const validate = await roleSchema.validate(req.body, {
+    abortEarly: false,
+  });
+  if (validate.error?.message) {
+    res.status(400).json({ message: validate.error.message });
+  } else {
+    const { name, description, permission } = req.body;
+    try {
+      const role = await prisma.role.create({
+        data: {
+          name: name,
+          description: description,
+        },
       });
-    });
 
-    await prisma.permRole.createMany({
-      data: permissions,
-    });
+      const roleId = role.roleId;
+      let permissions: any = [];
 
-    res.status(201).json({
-      message: "Role created successfully",
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ error: error });
+      permission.map((p: any) => {
+        permissions.push({
+          permissionId: p,
+          roleId: roleId,
+        });
+      });
+
+      await prisma.permRole.createMany({
+        data: permissions,
+      });
+
+      res.status(201).json({
+        message: "Role created successfully",
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({ error: error });
+    }
   }
 };
 
@@ -73,33 +80,51 @@ export const getRole = async (req: Request, res: Response) => {
 
 export const updateRole = async (req: Request, res: Response) => {
   const roleId = req.params.roleId;
-  const body = req.body;
-  try {
-    const updatedRole = await prisma.role.update({
-      where: {
-        roleId: roleId,
-      },
-      data: body,
+  const roleExists = await prisma.role.findUnique({
+    where: { roleId: roleId },
+  });
+  if (!roleExists) {
+    res.status(404).json({
+      message: "Role not found",
     });
-    res.status(200).json({
-      message: "Role updated successfully",
-      role: updatedRole,
-    });
-  } catch (error) {
-    res.status(400).json({ error: error });
+  } else {
+    const body = req.body;
+    try {
+      const updatedRole = await prisma.role.update({
+        where: {
+          roleId: roleId,
+        },
+        data: body,
+      });
+      res.status(200).json({
+        message: "Role updated successfully",
+        role: updatedRole,
+      });
+    } catch (error) {
+      res.status(400).json({ error: error });
+    }
   }
 };
 
 export const deleteRole = async (req: Request, res: Response) => {
   const roleId = req.params.roleId;
-  try {
-    await prisma.role.delete({
-      where: { roleId: roleId },
+  const roleExists = await prisma.role.findUnique({
+    where: { roleId: roleId },
+  });
+  if (!roleExists) {
+    res.status(404).json({
+      message: "Role not found",
     });
-    res.status(200).json({
-      message: "Role deleted successfully",
-    });
-  } catch (error) {
-    res.status(400).json({ error: error });
+  } else {
+    try {
+      await prisma.role.delete({
+        where: { roleId: roleId },
+      });
+      res.status(200).json({
+        message: "Role deleted successfully",
+      });
+    } catch (error) {
+      res.status(400).json({ error: error });
+    }
   }
 };

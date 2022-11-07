@@ -1,25 +1,32 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-
+import { permissionSchema } from "../validator/permission";
 const prisma = new PrismaClient();
 
 export const createPermission = async (req: Request, res: Response) => {
-  const { name, action, subject, fields, conditions } = req.body;
-  try {
-    await prisma.permission.create({
-      data: {
-        name: name,
-        action: action,
-        subject: subject,
-        fields: fields,
-        conditions: conditions,
-      },
-    });
-    res.status(201).json({
-      message: "Permission created successfully",
-    });
-  } catch (error) {
-    res.status(400).json({ error: error });
+  const validate = await permissionSchema.validate(req.body, {
+    abortEarly: false,
+  });
+  if (validate.error?.message) {
+    res.status(400).json({ message: validate.error.message });
+  } else {
+    const { name, action, subject, fields, conditions } = req.body;
+    try {
+      await prisma.permission.create({
+        data: {
+          name: name,
+          action: action,
+          subject: subject,
+          fields: fields,
+          conditions: conditions,
+        },
+      });
+      res.status(201).json({
+        message: "Permission created successfully",
+      });
+    } catch (error) {
+      res.status(400).json({ error: error });
+    }
   }
 };
 
@@ -60,33 +67,51 @@ export const getPermission = async (req: Request, res: Response) => {
 
 export const updatePermission = async (req: Request, res: Response) => {
   const permId = req.params.permId;
-  const body = req.body;
-  try {
-    const updatedPermission = await prisma.permission.update({
-      where: {
-        permId: permId,
-      },
-      data: body,
+  const permExists = await prisma.permission.findUnique({
+    where: { permId: permId },
+  });
+  if (!permExists) {
+    res.status(404).json({
+      message: "Permission does not exist",
     });
-    res.status(200).json({
-      message: "Permission updated successfully",
-      permission: updatedPermission,
-    });
-  } catch (error) {
-    res.status(400).json({ error: error });
+  } else {
+    const body = req.body;
+    try {
+      const updatedPermission = await prisma.permission.update({
+        where: {
+          permId: permId,
+        },
+        data: body,
+      });
+      res.status(200).json({
+        message: "Permission updated successfully",
+        permission: updatedPermission,
+      });
+    } catch (error) {
+      res.status(400).json({ error: error });
+    }
   }
 };
 
 export const deletePermission = async (req: Request, res: Response) => {
   const permId = req.params.permId;
-  try {
-    await prisma.permission.delete({
-      where: { permId: permId },
+  const permExists = await prisma.permission.findUnique({
+    where: { permId: permId },
+  });
+  if (!permExists) {
+    res.status(404).json({
+      message: "Permission does not exist",
     });
-    res.status(200).json({
-      message: "Permission deleted successfully",
-    });
-  } catch (error) {
-    res.status(400).json({ error: error });
+  } else {
+    try {
+      await prisma.permission.delete({
+        where: { permId: permId },
+      });
+      res.status(200).json({
+        message: "Permission deleted successfully",
+      });
+    } catch (error) {
+      res.status(400).json({ error: error });
+    }
   }
 };

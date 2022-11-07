@@ -14,7 +14,6 @@ export const register = async (req: Request, res: Response) => {
     res.status(400).json({ message: validate.error?.message });
   } else {
     const { email, password, firstName, lastName, role } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
     try {
       const isEmail = await prisma.user.findUnique({
         where: { email: email },
@@ -22,6 +21,7 @@ export const register = async (req: Request, res: Response) => {
       if (isEmail) {
         res.status(400).json({ message: "Email already exists" });
       } else {
+        const hashedPassword = await bcrypt.hash(password, 10);
         await prisma.user.create({
           data: {
             email: email,
@@ -60,7 +60,7 @@ export const login = async (req: Request, res: Response) => {
           message: "logged in successfully",
         });
       } else {
-        res.status(401).json({ message: "user does not exist" });
+        res.status(401).json({ message: "incorrect user name or password" });
       }
     } catch (error) {
       res.status(404).json({

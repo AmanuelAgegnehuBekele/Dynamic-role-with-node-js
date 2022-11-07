@@ -3,8 +3,6 @@ import { PrismaClient } from "@prisma/client";
 import { getPerm, getUser } from "../utils/user";
 import { defineAbilitiesFor, ForbiddenOperationError } from "../casl/abilities";
 import { ForbiddenError, subject } from "@casl/ability";
-import { Console } from "console";
-import { userIdValidation } from "../validator/user";
 
 const prisma = new PrismaClient();
 

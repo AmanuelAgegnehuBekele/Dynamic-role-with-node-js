@@ -26,6 +26,7 @@
   "dependencies": {
     "@casl/ability": "^6.3.1",
     "@prisma/client": "^4.4.0",
+    "@quixo3/prisma-session-store": "^3.1.10",
     "bcrypt": "^5.1.0",
     "cookie": "^0.5.0",
     "cookie-parser": "^1.4.6",

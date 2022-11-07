@@ -4,6 +4,7 @@ import { getPerm, getUser } from "../utils/user";
 import { defineAbilitiesFor, ForbiddenOperationError } from "../casl/abilities";
 import { ForbiddenError, subject } from "@casl/ability";
 import { Console } from "console";
+import { userIdValidation } from "../validator/user";
 
 const prisma = new PrismaClient();
 
@@ -87,8 +88,8 @@ export const updateUser = async (req: Request, res: Response) => {
 };
 
 export const deleteUser = async (req: Request, res: Response) => {
-  const userId = req.params.userId;
   try {
+    const userId = req.params.userId;
     const role = await getPerm(req.session.user.userId);
     const use = await getUser(req.session.user.userId);
     const abilities = await defineAbilitiesFor(role, use);

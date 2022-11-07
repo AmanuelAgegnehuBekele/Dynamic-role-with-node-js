@@ -53,11 +53,8 @@ model CourseEnrollment {
   userId    String
   course    Course   @relation(fields: [courseId], references: [courseId], onUpdate: Cascade, onDelete: Cascade)
   courseId  String
-  role      Role     @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: Cascade)
-  roleId    String
 
   @@id([userId, courseId])
-  @@index([userId, roleId])
 }
 
 model Test {
@@ -83,14 +80,13 @@ model TestResult {
 }
 
 model Role {
-  roleId           String             @id @default(uuid())
-  name             String
-  description      String
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  User             User[]
-  permission       PermRole[]
-  CourseEnrollment CourseEnrollment[]
+  roleId      String     @id @default(uuid())
+  name        String
+  description String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  User        User[]
+  permission  PermRole[]
 }
 
 model Permission {

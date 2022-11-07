@@ -20,7 +20,6 @@ export const createUserEnrollment = async (req: Request, res: Response) => {
             courseId: body.courseId,
           },
         },
-        role: body.role,
       },
     });
 
@@ -36,7 +35,7 @@ export const createUserEnrollment = async (req: Request, res: Response) => {
 export const getUserEnrollments = async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId;
-    const enroll = await prisma.course.findMany({
+    const enroll = await prisma.courseEnrollment.findMany({
       where: {
         userId: userId,
       },

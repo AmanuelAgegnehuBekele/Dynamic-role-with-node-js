@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { authenticate } from "passport";
 import "express-session";
 import { createUserValidation, loginValidation } from "../validator/user";
 

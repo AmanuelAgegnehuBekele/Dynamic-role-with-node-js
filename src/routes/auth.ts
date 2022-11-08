@@ -1,5 +1,4 @@
 import express from "express";
-import passport from "passport";
 import { register, login, logout } from "../controller/auth";
 import { isLoggedIn, isNotAuthenticated } from "../middleware/auth";
 
